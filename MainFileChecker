@@ -1,0 +1,112 @@
+package com.agilone;
+
+import java.io.*;
+import java.util.Properties;
+import java.util.Scanner;
+
+
+public class MainFileCheck {
+
+    public static void readByLine(String FilePath, String delimiter, String qualifier) throws IOException {
+        File f = new File(FilePath);
+        String _Path = f.getParent();
+        String _FileName = f.getName();
+        String _SummaryFileName = "Summary_" + _FileName;
+        String _SummaryFilePath = _Path + "/" + _SummaryFileName;
+
+        Scanner lineReader = new Scanner(new File(FilePath));
+        File sf = new File(_SummaryFilePath);
+
+        FileWriter writer = new FileWriter(_SummaryFilePath, false);
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+
+        int HeaderCount = 0;
+        int RowCount = 0;
+        int TotalLine = 0;
+        int ErrorLine = 0;
+        while (lineReader.hasNext()) {
+            String line = lineReader.nextLine();
+            if (TotalLine == 0) {
+                HeaderCount = splitRegex(line, delimiter, qualifier).length;
+            }
+            /*Boolean isContains = line.contains("\\");
+            if (isContains) {
+                System.out.println("Line Number :" + TotalLine + " " + line);
+                bufferedWriter.write("Line Number :" + TotalLine + " " + line);
+                bufferedWriter.newLine();
+                ErrorLine++;
+                TotalLine++;
+                continue;
+            }*/
+            RowCount = splitRegex(line, delimiter, qualifier).length;
+            if (HeaderCount != RowCount) {
+                ErrorLine++;
+                //System.out.println("Line Number :" + TotalLine + " " + line);
+                bufferedWriter.write("Line Number :" + TotalLine + " " + line);
+                bufferedWriter.newLine();
+            }
+            TotalLine++;
+        }
+
+        //System.out.println("Total Row : "+TotalLine);
+        //System.out.println("Problematic rows : "+ErrorLine);
+        bufferedWriter.write("Total Row : " + TotalLine);
+        bufferedWriter.newLine();
+        bufferedWriter.write("Invalid Rows : " + ErrorLine);
+        bufferedWriter.newLine();
+
+        lineReader.close();
+        bufferedWriter.close();
+
+    }
+
+    public static String[] splitRegex(String text, String delimiter, String qualifier) {
+
+        String pattern = String.format("\\%1$s(?=(?:[^\\%2$s]*\\%2$s[^\\%2$s]*\\%2$s)*(?![^\\%2$s\"]*\\%2$s))", delimiter, qualifier);
+
+        //String Line= "EmailAddress	ProductDescription	ProductImageURL	ProductListPrice	ProductName	ProductNumber	ProductURL	Rank";
+        //String Line2= "\"EmailAddress\",\"ProductDescription\"\",\"ProductImageURL\",\"ProductListPrice\",\"ProductName\",\"ProductNumber\",\"ProductURL\",\"Rank\" ";
+        //System.out.println(pattern);
+        String[] split = text.split(pattern, -1);
+
+        return split;
+
+
+    }
+
+
+    public static void main(String[] args) throws IOException {
+        /*String line = "*foo**\"\"*bar*c;qual=\"baz*blurb\"*d;junk=\"quux*syzygy\"****\"asda***sd\"";
+        String qualifier1="\"";
+        String delimiter1="*";
+        System.out.println(splitRegex(line,delimiter1,qualifier1).length);*/
+
+
+
+
+        if (args.length > 0) {
+            String propertiesFile = args[0];
+            Properties properties = new Properties();
+            properties.load(new FileInputStream(propertiesFile));
+
+            String FilePath = properties.getProperty("path");
+            String delimiter = properties.getProperty("delimiter");
+            String qualifier = properties.getProperty("qualifier");
+            readByLine(FilePath, delimiter, qualifier);
+
+
+            //readByLine();
+            //String Line= "EmailAddress	\\ProductDescription	ProductImageURL	ProductListPrice	ProductName	ProductNumber	ProductURL	Rank";
+            //String qualifier="\"";
+            //String delimiter="\t";
+            //System.out.println(SplitRegex(Line,delimiter,qualifier).length);
+
+        } else {
+
+            throw new IllegalArgumentException("Missing config.properties file path!");
+
+        }
+    }
+
+
+}
